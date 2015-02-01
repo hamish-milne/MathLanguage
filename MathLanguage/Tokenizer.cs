@@ -86,49 +86,78 @@ namespace MathLanguage
 			var tokenType = TokenType.None;
 			while((c = GetChar()) != '\0')
 			{
-				Char.GetUnicodeCategory(c)
-				if (Char.IsWhiteSpace(c))
+				bool categorySwitch = false;
+				// Some modes don't care what category this char is,
+				// so we'll deal with those first
+				switch (mode)
 				{
-					if (sb.Length > 0)
-						break;
-					continue;
-				}
-				else if (Char.IsDigit(c))
-				{
-
-				}
-				else if (Char.IsLetter(c))
-				{
-					switch (mode)
-					{
-						case Mode.None:
-							mode = Mode.Identifier;
-							tokenType = TokenType.Identifier;
-							goto case Mode.Identifier;
-						case Mode.Identifier:
-							sb.Append(c);
-							break;
-						case Mode.Operator:
+					case Mode.String:
+						if (c == '\\')
+							mode = Mode.Escape;
+						else if (c == '"')
 							mode = Mode.None;
-							break;
-						case Mode.Escape:
-							if (!GetEscapeChar(ref c))
-								throw new TokenException("Invalid escape character: " + c);
+						else
 							sb.Append(c);
-							mode = Mode.String;
-							break;
-						case Mode.String:
-							if (c == '\\')
-								mode = Mode.Escape;
-							else if (c == '"')
-								mode = Mode.None;
-							else
-								sb.Append(c);
-							break;
-					}
-					if (mode == Mode.None)
+						break;
+					case Mode.Escape:
+						if (!GetEscapeChar(ref c))
+							throw new TokenException("Invalid escape character: " + c);
+						sb.Append(c);
+						mode = Mode.String;
+						break;
+					default:
+						categorySwitch = true;
 						break;
 				}
+				// The category matters for the rest
+				if(categorySwitch) switch(Char.GetUnicodeCategory(c))
+				{
+					case UnicodeCategory.Control:
+					case UnicodeCategory.SpaceSeparator:
+					case UnicodeCategory.ParagraphSeparator:
+					case UnicodeCategory.LineSeparator:
+					case UnicodeCategory.Format:
+						if (mode == Mode.None)
+							continue;
+						break;
+					case UnicodeCategory.LowercaseLetter:
+					case UnicodeCategory.UppercaseLetter:
+					case UnicodeCategory.TitlecaseLetter:
+					case UnicodeCategory.ModifierLetter:
+					case UnicodeCategory.OtherLetter:
+					case UnicodeCategory.Surrogate:
+					case UnicodeCategory.PrivateUse:
+					case UnicodeCategory.LetterNumber:
+					case UnicodeCategory.NonSpacingMark:
+					case UnicodeCategory.SpacingCombiningMark:
+						switch (mode)
+						{
+							case Mode.None:
+								mode = Mode.Identifier;
+								tokenType = TokenType.Identifier;
+								goto case Mode.Identifier;
+							case Mode.Identifier:
+								sb.Append(c);
+								break;
+							case Mode.Operator:
+								mode = Mode.None;
+								break;
+						}
+						break;
+					case UnicodeCategory.DecimalDigitNumber:
+						break;
+					case UnicodeCategory.ClosePunctuation:
+					case UnicodeCategory.OpenPunctuation:
+					case UnicodeCategory.ConnectorPunctuation:
+					case UnicodeCategory.DashPunctuation:
+					case UnicodeCategory.MathSymbol:
+					case UnicodeCategory.OtherPunctuation:
+						break;
+					default:
+						throw new TokenException("Unexpected character: " + c);
+				}
+				if (mode == Mode.None)
+					break;
 			}
 			if (tokenType == TokenType.None)
 				return null;
