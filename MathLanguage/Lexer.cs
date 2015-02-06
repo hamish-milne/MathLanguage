@@ -6,25 +6,59 @@ using System.Globalization;
 
 namespace MathLanguage
 {
-	class TokenException : Exception
+	class LexerException : Exception
 	{
-		public TokenException(string message)
+		public LexerException(string message)
 			: base(message)
 		{
 		}
 	}
 
-	class Tokenizer
+	class Lexer
 	{
+
 		Dictionary<string, Token> foundTokens
-			= new Dictionary<string, Token>();
+			= new Dictionary<string, Token>()
+			{
+				{ "let", Token.Let },
+				{ "mut", Token.Mut },
+				{ "const", Token.Const },
+
+				{ "in", Token.In },
+				{ "|", Token.Union },
+				{ "&", Token.Intersect },
+				{ "!", Token.Not },
+				{ "=", Token.Equals },
+				{ ">", Token.Greater },
+				{ "<", Token.Less },
+				{ "+", Token.Plus },
+				{ "-", Token.Minus },
+				{ "*", Token.Multiply },
+				{ "/", Token.Divide },
+				{ "%", Token.Modulo },
+				{ "^", Token.Power },
+
+				{ "'", Token.Diff },
+				{ "(", Token.OpenParen },
+				{ ")", Token.CloseParen },
+				{ "{", Token.OpenBrace },
+				{ "}", Token.CloseBrace },
+				{ "[", Token.OpenBracket },
+				{ "]", Token.CloseBracket },
+				{ ",", Token.Comma },
+				{ ".", Token.Dot },
+				{ ":", Token.Colon },
+				{ ";", Token.Semicolon },
+			};
 
 		Stream stream;
 		StreamReader reader;
 		StringBuilder sb = new StringBuilder();
 		static char[] buf = new char[1];
+		int line = 1;
+		int col = 0;
 
-		public Tokenizer(Stream stream, Encoding encoding = null)
+		public Lexer(Stream stream, Encoding encoding = null)
 		{
 			if (stream == null)
 				throw new ArgumentNullException();
@@ -34,16 +68,15 @@ namespace MathLanguage
 				new StreamReader(stream, encoding);
 		}
 
-		public void Add(Token t)
-		{
-			if (t == null)
-				throw new ArgumentNullException();
-			if (t.Text != null)
-				foundTokens[t.Text] = t;
-		}
-
+		Char lastChar = '\0';
 		Char GetChar()
 		{
+			if(lastChar != '\0')
+			{
+				var c = lastChar;
+				lastChar = '\0';
+				return c;
+			}
 			// Skip nullbytes in the stream, so we can use them as an EOF marker
 			while(reader.Read(buf, 0, 1) == 1 && buf[0] == '\0');
 			return buf[0];
@@ -52,15 +85,17 @@ namespace MathLanguage
 		void SkipLine()
 		{
 			while (reader.Read(buf, 0, 1) == 1 && buf[0] != '\n');
+			line++;
+			col = 0;
 		}
 
 		enum Mode
 		{
 			None,
 			Identifier,
-			Operator,
 			String,
 			Escape,
+			Number,
 		}
 
 		public bool GetEscapeChar(ref char c)
@@ -78,14 +113,15 @@ namespace MathLanguage
 			return true;
 		}
 
-		public Token Next()
+		public TokenData Next()
 		{
 			sb.Remove(0, sb.Length);
-			Char c;
+			char c;
 			var mode = Mode.None;
-			var tokenType = TokenType.None;
+			var token = Token.None;
 			while((c = GetChar()) != '\0')
 			{
+				col++;
 				bool categorySwitch = false;
 				// Some modes don't care what category this char is,
 				// so we'll deal with those first
@@ -101,7 +137,7 @@ namespace MathLanguage
 						break;
 					case Mode.Escape:
 						if (!GetEscapeChar(ref c))
-							throw new TokenException("Invalid escape character: " + c);
+							throw new LexerException("Invalid escape character: " + c);
 						sb.Append(c);
 						mode = Mode.String;
 						break;
@@ -117,9 +153,15 @@ namespace MathLanguage
 					case UnicodeCategory.ParagraphSeparator:
 					case UnicodeCategory.LineSeparator:
 					case UnicodeCategory.Format:
+						if(c == '\n')
+						{
+							line++;
+							col = 1;
+						}
 						if (mode == Mode.None)
 							continue;
 						break;
+					// Identifiers can be any unicode letter or underscores
 					case UnicodeCategory.LowercaseLetter:
 					case UnicodeCategory.UppercaseLetter:
 					case UnicodeCategory.TitlecaseLetter:
@@ -134,17 +176,33 @@ namespace MathLanguage
 						{
 							case Mode.None:
 								mode = Mode.Identifier;
-								tokenType = TokenType.Identifier;
+								token = Token.Identifier;
 								goto case Mode.Identifier;
 							case Mode.Identifier:
 								sb.Append(c);
 								break;
-							case Mode.Operator:
+							default:
+								lastChar = c;
 								mode = Mode.None;
 								break;
 						}
 						break;
 					case UnicodeCategory.DecimalDigitNumber:
+						switch(mode)
+						{
+							case Mode.None:
+								mode = Mode.Number;
+								token = Token.Number;
+								goto case Mode.Number;
+							case Mode.Number:
+							case Mode.Identifier:
+								sb.Append(c);
+								break;
+							default:
+								lastChar = c;
+								mode = Mode.None;
+								break;
+						}
 						break;
 					case UnicodeCategory.ClosePunctuation:
 					case UnicodeCategory.OpenPunctuation:
@@ -152,21 +210,67 @@ namespace MathLanguage
 					case UnicodeCategory.DashPunctuation:
 					case UnicodeCategory.MathSymbol:
 					case UnicodeCategory.OtherPunctuation:
+						if(c == '"')
+						{
+							mode = Mode.String;
+							token = Token.String;
+							break;
+						}
+						switch(mode)
+						{
+							case Mode.None:
+								sb.Append(c);
+								if(c == '_') // Underscores are identifier chars
+								{
+									mode = Mode.Identifier;
+									token = Token.Identifier;
+								} // Everything else is a single char operator
+								break;
+							case Mode.Number:
+								if (c == '.')
+									sb.Append(c);
+								else goto default;
+								break;
+							case Mode.Identifier:
+								if (c == '_')
+									sb.Append(c);
+								else goto default;
+								break;
+							default:
+								lastChar = c;
+								mode = Mode.None;
+								break;
+						}
 						break;
 					default:
-						throw new TokenException("Unexpected character: " + c);
+						throw new LexerException("Unexpected character: " + c);
 				}
 				if (mode == Mode.None)
 					break;
 			}
-			if (tokenType == TokenType.None)
-				return null;
-			Token ret = null;
+			TokenData ret;
 			var str = sb.ToString();
-			if(tokenType != TokenType.String)
-				foundTokens.TryGetValue(str, out ret);
-			if (ret == null)
-				ret = new Token(str, tokenType);
+			if(token == Token.Identifier)
+			{
+				foundTokens.TryGetValue(sb.ToString(), out token);
+				if(token == Token.None)
+					token = Token.Identifier;
+			}
+			ret.token = token;
+			ret.line = line;
+			ret.col = col;
+			ret.str = null;
+			ret.literal = 0;
+			switch(token)
+			{
+				case Token.Identifier:
+				case Token.String:
+					ret.str = str;
+					break;
+				case Token.Number:
+					ret.literal = Double.Parse(sb.ToString());
+					break;
+			}
 			return ret;
 		}
 

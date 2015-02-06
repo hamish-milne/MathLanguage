@@ -4,29 +4,60 @@ using System.Text;
 
 namespace MathLanguage
 {
-	enum TokenType
+	public enum Token
 	{
 		None,
 		Identifier,
-		Operator,
 		Number,
 		String,
-		Unknown
+		EOF,
+		// Keywords
+		Let,
+		Mut,
+		Const,
+		// Binary operators
+		In,
+		Union,
+		Intersect,
+		Not,
+		Equals,
+		Greater,
+		Less,
+		Plus,
+		Minus,
+		Multiply,
+		Divide,
+		Modulo,
+		Power,
+		// Misc operators
+		Diff,
+		OpenParen,
+		CloseParen,
+		OpenBrace,
+		CloseBrace,
+		OpenBracket,
+		CloseBracket,
+		Comma,
+		Dot,
+		Colon,
+		Semicolon,
 	}
 
-	class Token
+	public struct TokenData
 	{
-		string text;
-		TokenType type;
-		
-		public string Text { get { return text; } }
+		public Token token;
+		public string str;
+		public double literal;
+		public int line;
+		public int col;
 
-		public TokenType Type { get { return type; } }
-
-		public Token(string text, TokenType type)
+		public TokenData(Token token, string str, double literal, int line, int col)
 		{
-			this.text = text;
-			this.type = type;
+			this.token = token;
+			this.str = str;
+			this.literal = literal;
+			this.line = line;
+			this.col = col;
 		}
 	}
 }
