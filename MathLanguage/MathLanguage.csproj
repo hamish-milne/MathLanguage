@@ -11,6 +11,7 @@
     <AssemblyName>MathLanguage</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -37,7 +38,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BoolValue.cs" />
+    <Compile Include="ComplexValue.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="NumberValue.cs" />
     <Compile Include="OperatorManager.cs" />
     <Compile Include="Parser.cs" />
     <Compile Include="Program.cs" />

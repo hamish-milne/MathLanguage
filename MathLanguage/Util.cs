@@ -17,5 +17,12 @@ namespace MathLanguage
 					ret = list[i];
 			return ret;
 		}
+
+		public static int Pair(int x, int y)
+		{
+			if (x > y)
+				return (x * x) + x + y;
+			return (y * y) + x;
+		}
 	}
 }

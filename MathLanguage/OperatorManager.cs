@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace MathLanguage
 {
-	public delegate Value Operation<T1, T2>(T1 a, T2 b, bool assign);
+	public delegate Value Operation<in T1, in T2>(T1 a, T2 b, bool assign);
 
 	public class OperatorManager
 	{
@@ -30,9 +30,7 @@ namespace MathLanguage
 			{
 				int x = a == null ? 0 : a.GetHashCode();
 				int y = b == null ? 0 : b.GetHashCode();
-				if (x > y)
-					return (x * x) + x + y;
-				return (y * y) + x;
+				return Util.Pair(x, y);
 			}
 
 			public override bool Equals(object obj)
@@ -60,12 +58,14 @@ namespace MathLanguage
 			genericMethod = ((DoOp)DoOperationNonGeneric<Value, Value>).Method;
 		}
 
+		static Operation<Value, Value> nop = (a, b, assign) => a;
+		
 		public void Register<T1, T2>(Operator op, Operation<T1, T2> operation)
 			where T1 : Value
 			where T2 : Value
 		{
 			if (operation == null)
-				throw new ArgumentException("operation");
+				operation = nop;
 			var index = (int)op;
 			if (index < 0 || index >= list.Length)
 				throw new ArgumentException("Invalid operator");
