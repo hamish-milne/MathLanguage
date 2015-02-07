@@ -9,7 +9,7 @@ namespace MathLanguage
 	{
 		public delegate bool Compare<T>(T a, T b);
 
-		public static U Max<U>(this IList<U> list, Compare<U> compare)
+		public static U Max<U>(IList<U> list, Compare<U> compare)
 		{
 			U ret = default(U);
 			for (int i = 0; i < list.Count; i++)

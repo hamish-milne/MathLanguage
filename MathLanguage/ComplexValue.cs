@@ -28,6 +28,11 @@ namespace MathLanguage
 			return (a.Re == b.Re) && (a.Im == b.Im);
 		}
 
+		public static bool operator !=(Complex a, Complex b)
+		{
+			return (a.Re != b.Re) || (a.Im != b.Im);
+		}
+
 		public static Complex operator +(Complex a, Complex b)
 		{
 			return new Complex(a.Re + b.Re, a.Im + b.Im);
@@ -60,11 +65,18 @@ namespace MathLanguage
 		{
  			return Util.Pair(Re.GetHashCode(), Im.GetHashCode());
 		}
+
+		public override bool Equals(object obj)
+		{
+			if (obj == null || !(obj is Complex))
+				return false;
+			return this == (Complex)obj;
+		}
 	}
 
 	public class ComplexValue : Value
 	{
-		Dictionary<Complex, ComplexValue> cachedValues
+		static readonly Dictionary<Complex, ComplexValue> cachedValues
 			= new Dictionary<Complex, ComplexValue>()
 		{
 			{ Complex.Zero, new ComplexValue(Complex.Zero) },
@@ -126,7 +138,7 @@ namespace MathLanguage
 			val = value;
 		}
 
-		public Value Get(Complex value)
+		public static Value Get(Complex value)
 		{
 			if (value.Im == 0)
 				return NumberValue.Get(value.Re);
@@ -142,38 +154,76 @@ namespace MathLanguage
 			get { return "complex"; }
 		}
 
-		delegate Complex Op(Complex a, Complex b);
-		static void RegisterOperation(Operator op, Op opr)
+		static void Register(Operator op, Operation<ComplexValue, ComplexValue> opr)
 		{
-			OperatorManager.I.Register<ComplexValue, ComplexValue>(op, (a, b, assign) =>
+			OperatorManager.I.Register(op, opr);
+		}
+
+		delegate Complex Op(Complex a, Complex b);
+		static void SelfOp(Operator op, Op opr)
+		{
+			Register(op, (a, b, assign) =>
 			{
-				if (assign)
+				var newValue = opr(a.Value, b.Value);
+				if(assign)
+					a.Value = newValue;
+				if (assign || newValue == a.Value)
+					return a;
+				return Get(newValue);
+			});
+			OperatorManager.I.Register<NumberValue, ComplexValue>(op, (a, b, assign) =>
+			{
+				var aVal = new Complex(a.Value, 0);
+				var newValue = opr(aVal, b.Value);
+				if (newValue == aVal)
+					return a;
+				if(assign && newValue.Im == 0)
 				{
-					a.Value = opr(a.Value, b.Value);
+					a.Value = newValue.Re;
 					return a;
 				}
-				var newValue = opr(a.Value, b.Value);
-				if (newValue == a.Value)
+				return Get(newValue);
+			});
+			OperatorManager.I.Register<ComplexValue, NumberValue>(op, (a, b, assign) =>
+			{
+				var newValue = opr(a.Value, new Complex(b.Value, 0));
+				if (assign)
+					a.Value = newValue;
+				if (assign || newValue == a.Value)
 					return a;
-				return new ComplexValue(newValue);
+				return Get(newValue);
 			});
 		}
 
 		delegate bool Test(Complex a, Complex b);
-		static void RegisterComparison(Operator op, Test test)
+		static void SelfTest(Operator op, Test test)
 		{
-			OperatorManager.I.Register<ComplexValue, ComplexValue>(op,
-				(a, b, assign) => BoolValue.Get(test(a.Value, b.Value)));
+			Register(op, (a, b, assign) => BoolValue.Get(test(a.Value, b.Value)));
+			OperatorManager.I.Register<NumberValue, ComplexValue>(op,
+				(a, b, assign) => BoolValue.Get(test(new Complex(a.Value, 0), b.Value)));
+			OperatorManager.I.Register<ComplexValue, NumberValue>(op,
+				(a, b, assign) => BoolValue.Get(test(a.Value, new Complex(b.Value, 0))));
 		}
 
 		static ComplexValue()
 		{
-			RegisterOperation(Operator.Add, (a, b) => a + b);
-			RegisterOperation(Operator.Subtract, (a, b) => a - b);
-			RegisterOperation(Operator.Multiply, (a, b) => a * b);
-			RegisterOperation(Operator.Divide, (a, b) => a / b);
-			RegisterOperation(Operator.Negate, (a, b) => -a);
+			SelfOp(Operator.Add, (a, b) => a + b);
+			SelfOp(Operator.Subtract, (a, b) => a - b);
+			SelfOp(Operator.Multiply, (a, b) => a * b);
+			SelfOp(Operator.Divide, (a, b) => a / b);
+			SelfOp(Operator.Negate, (a, b) => -a);
 
+			Test eq = (a, b) => a == b;
+			Test neq = (a, b) => a != b;
+			SelfTest(Operator.Equal, eq);
+			SelfTest(Operator.In, eq);
+			SelfTest(Operator.NotEqual, neq);
+			SelfTest(Operator.NotIn, neq);
+
+			Register(Operator.Magnitude,
+				(a, b, assign) => NumberValue.Get(a.Magnitude));
+			Register(Operator.Substitute, null);
+			Register(Operator.Evaluate, null);
 		}
 	}
 }

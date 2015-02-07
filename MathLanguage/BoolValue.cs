@@ -20,11 +20,6 @@ namespace MathLanguage
 			get { return "bool"; }
 		}
 
-		public override T ConvertTo<T>()
-		{
-			throw new InvalidCastException();
-		}
-
 		protected BoolValue(bool value)
 		{
 			internalValue = value;

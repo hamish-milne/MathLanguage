@@ -4,17 +4,9 @@ using System.Text;
 
 namespace MathLanguage
 {
-	enum VariableType
-	{
-		None,
-		Scalar,
-		Vector,
-		Function,
-		Set,
-	}
 
-	class Variable
+	public class Variable
 	{
-		VariableType type;
+		Value value;
 	}
 }

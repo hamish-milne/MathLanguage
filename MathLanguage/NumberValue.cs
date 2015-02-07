@@ -47,13 +47,10 @@ namespace MathLanguage
 		{
 			OperatorManager.I.Register<NumberValue, NumberValue>(op, (a, b, assign) =>
 			{
-				if (assign)
-				{
-					a.Value = opr(a.Value, b.Value);
-					return a;
-				}
 				var newValue = opr(a.Value, b.Value);
-				if (newValue == a.Value)
+				if (assign)
+					a.Value = newValue;
+				if (assign || newValue == a.Value)
 					return a;
 				return Get(newValue);
 			});

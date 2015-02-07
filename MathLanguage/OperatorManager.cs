@@ -53,7 +53,7 @@ namespace MathLanguage
 		public OperatorManager()
 		{
 			var values = (Operator[])Enum.GetValues(typeof(Operator));
-			var max = (int)values.Max((a, b) => (a > b));
+			var max = (int)Util.Max(values, (a, b) => (a > b));
 			list = new Dictionary<TypePair, Delegate>[max + 1];
 			genericMethod = ((DoOp)DoOperationNonGeneric<Value, Value>).Method;
 		}
