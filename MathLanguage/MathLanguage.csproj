@@ -38,8 +38,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ArrayPool.cs" />
     <Compile Include="BoolValue.cs" />
+    <Compile Include="Complex.cs" />
     <Compile Include="ComplexValue.cs" />
+    <Compile Include="Enumerations.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="NumberValue.cs" />
     <Compile Include="OperatorManager.cs" />
@@ -52,6 +55,7 @@
     <Compile Include="Util.cs" />
     <Compile Include="Value.cs" />
     <Compile Include="Variable.cs" />
+    <Compile Include="Vector.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

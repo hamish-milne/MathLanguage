@@ -4,76 +4,6 @@ using System.Text;
 
 namespace MathLanguage
 {
-	public struct Complex
-	{
-		public static readonly Complex Zero = new Complex(0, 0);
-		public static readonly Complex I = new Complex(0, 1);
-
-		public double Re;
-		public double Im;
-
-		public double GetMagnitude()
-		{
-			return Math.Sqrt((Re * Re) + (Im * Im));
-		}
-
-		public Complex(double re, double im)
-		{
-			Re = re;
-			Im = im;
-		}
-
-		public static bool operator ==(Complex a, Complex b)
-		{
-			return (a.Re == b.Re) && (a.Im == b.Im);
-		}
-
-		public static bool operator !=(Complex a, Complex b)
-		{
-			return (a.Re != b.Re) || (a.Im != b.Im);
-		}
-
-		public static Complex operator +(Complex a, Complex b)
-		{
-			return new Complex(a.Re + b.Re, a.Im + b.Im);
-		}
-
-		public static Complex operator -(Complex a, Complex b)
-		{
-			return new Complex(a.Re - b.Re, a.Im - b.Im);
-		}
-
-		public static Complex operator *(Complex a, Complex b)
-		{
-			return new Complex((a.Re * b.Re) - (a.Im * b.Im),
-				(a.Re * b.Im) + (a.Im * b.Re));
-		}
-
-		public static Complex operator -(Complex a)
-		{
-			return new Complex(-a.Re, -a.Im);
-		}
-
-		public static Complex operator /(Complex a, Complex b)
-		{
-			var denom = 1/((b.Re * b.Re) + (b.Im * b.Im));
-			return new Complex(((a.Re * b.Re) + (a.Im * b.Im)) * denom,
-				((a.Im * b.Re) - (a.Re * b.Im)) * denom);
-		}
-
-		public override int GetHashCode()
-		{
- 			return Util.Pair(Re.GetHashCode(), Im.GetHashCode());
-		}
-
-		public override bool Equals(object obj)
-		{
-			if (obj == null || !(obj is Complex))
-				return false;
-			return this == (Complex)obj;
-		}
-	}
-
 	public class ComplexValue : Value
 	{
 		static readonly Dictionary<Complex, ComplexValue> cachedValues
@@ -83,37 +13,28 @@ namespace MathLanguage
 			{ Complex.I, new ComplexValue(Complex.I) },
 		};
 
-		Complex val;
+		protected Complex internalValue;
+		protected bool constant;
 		double magnitude = -1;
 
-		public double Re
+		public virtual bool Constant
 		{
-			get { return val.Re; }
-			set
-			{
-				val.Re = value;
-				magnitude = -1;
-			}
+			get { return constant; }
 		}
 
-		public double Im
+		public virtual double Re
 		{
-			get { return val.Im; }
-			set
-			{
-				val.Im = value;
-				magnitude = -1;
-			}
+			get { return internalValue.Re; }
 		}
 
-		public Complex Value
+		public virtual double Im
 		{
-			get { return val; }
-			set
-			{
-				val = value;
-				magnitude = -1;
-			}
+			get { return internalValue.Im; }
+		}
+
+		public virtual Complex Value
+		{
+			get { return internalValue; }
 		}
 
 		public double Magnitude
@@ -126,16 +47,25 @@ namespace MathLanguage
 			}
 		}
 
-		public bool Equals(ComplexValue other)
+		public virtual Value SetValue(Complex value)
+		{
+			if (Constant)
+				return Get(value);
+			internalValue = value;
+			magnitude = -1;
+			return this;
+		}
+
+		public virtual bool Equals(ComplexValue other)
 		{
 			if (other == null)
 				return false;
-			return (other.Re == Re) && (other.Im == Im);
+			return (other.Value == Value);
 		}
 
 		protected ComplexValue(Complex value)
 		{
-			val = value;
+			internalValue = value;
 		}
 
 		public static Value Get(Complex value)
@@ -165,32 +95,31 @@ namespace MathLanguage
 			Register(op, (a, b, assign) =>
 			{
 				var newValue = opr(a.Value, b.Value);
-				if(assign)
-					a.Value = newValue;
-				if (assign || newValue == a.Value)
+				if (newValue == a.Value)
 					return a;
+				if (assign)
+					return a.SetValue(newValue);
 				return Get(newValue);
 			});
 			OperatorManager.I.Register<NumberValue, ComplexValue>(op, (a, b, assign) =>
 			{
-				var aVal = new Complex(a.Value, 0);
+				var aVal = new Complex(a.Value, 0.0);
 				var newValue = opr(aVal, b.Value);
 				if (newValue == aVal)
 					return a;
-				if(assign && newValue.Im == 0)
+				if(assign && newValue.Im == 0.0)
 				{
-					a.Value = newValue.Re;
-					return a;
+					return a.SetValue(newValue.Re);
 				}
 				return Get(newValue);
 			});
 			OperatorManager.I.Register<ComplexValue, NumberValue>(op, (a, b, assign) =>
 			{
-				var newValue = opr(a.Value, new Complex(b.Value, 0));
-				if (assign)
-					a.Value = newValue;
-				if (assign || newValue == a.Value)
+				var newValue = opr(a.Value, new Complex(b.Value, 0.0));
+				if (newValue == a.Value)
 					return a;
+				if (assign)
+					return a.SetValue(newValue);
 				return Get(newValue);
 			});
 		}

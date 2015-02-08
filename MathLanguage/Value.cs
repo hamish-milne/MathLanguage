@@ -4,35 +4,11 @@ using System.Text;
 
 namespace MathLanguage
 {
-	public enum Operator
-	{
-		Add,
-		Subtract,
-		Multiply,
-		Divide,
-		Power,
-		Union,
-		Intersect,
-		Not,
-		Negate,
-		// Comparison
-		In,
-		Equal,
-		Greater,
-		Less,
-		// Combined operators
-		NotIn,
-		NotEqual,
-		GreaterEqual,
-		LessEqual,
-		// Surrounds
-		Magnitude,
-		Substitute,
-		Evaluate
-	}
 
 	public abstract class Value
 	{
+		public static readonly Value None = new NoneValue();
+
 		class NoneValue : Value
 		{
 			public override string TypeName
@@ -53,7 +29,31 @@ namespace MathLanguage
 
 		public abstract string TypeName { get; }
 
-		public static readonly Value None = new NoneValue();
+		protected IDictionary<string, Value> members;
+		public virtual Value this[string member]
+		{
+			get
+			{
+				if (member == null)
+					throw new ArgumentNullException();
+				Value ret = null;
+				if (members != null)
+					members.TryGetValue(member, out ret);
+				if (ret == null)
+					throw new MissingMemberException(member, TypeName);
+				return ret;
+			}
+		}
+
+		public virtual Value SetMember(string member, Value value)
+		{
+			if (member == null)
+				throw new ArgumentNullException();
+			if (members == null)
+				members = new Dictionary<string, Value>();
+			members[member] = value;
+			return this;
+		}
 	}
 
 }
