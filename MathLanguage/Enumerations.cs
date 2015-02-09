@@ -31,4 +31,11 @@ namespace MathLanguage
 		Evaluate
 	}
 
+	public enum VariableFlags
+	{
+		None,
+		Constant,
+		Mutable
+	}
+
 }

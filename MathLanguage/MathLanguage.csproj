@@ -44,6 +44,7 @@
     <Compile Include="ComplexValue.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="ITypeMask.cs" />
     <Compile Include="NumberValue.cs" />
     <Compile Include="OperatorManager.cs" />
     <Compile Include="Parser.cs" />

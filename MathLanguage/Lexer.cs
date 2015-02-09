@@ -6,23 +6,22 @@ using System.Globalization;
 
 namespace MathLanguage
 {
-	class LexerException : Exception
+	public class Lexer
 	{
-		public LexerException(string message)
-			: base(message)
-		{
-		}
-	}
-
-	class Lexer
-	{
-
-		Dictionary<string, Token> foundTokens
+		protected Dictionary<string, Token> foundTokens
 			= new Dictionary<string, Token>()
 			{
 				{ "let", Token.Let },
 				{ "mut", Token.Mut },
 				{ "const", Token.Const },
+
+				{ "if", Token.If },
+				{ "else", Token.Else },
+				{ "for", Token.For },
+				{ "while", Token.While },
+				{ "switch", Token.Switch },
+				{ "break", Token.Break },
+				{ "return", Token.Return },
 
 				{ "in", Token.In },
 				{ "|", Token.Union },
@@ -51,12 +50,12 @@ namespace MathLanguage
 				{ ";", Token.Semicolon },
 			};
 
-		Stream stream;
-		StreamReader reader;
-		StringBuilder sb = new StringBuilder();
-		static char[] buf = new char[1];
-		int line = 1;
-		int col = 0;
+		protected Stream stream;
+		protected StreamReader reader;
+		protected StringBuilder sb = new StringBuilder();
+		protected static char[] buf = new char[1];
+		protected int line = 1;
+		protected int col = 0;
 
 		public Lexer(Stream stream, Encoding encoding = null)
 		{
@@ -68,8 +67,8 @@ namespace MathLanguage
 				new StreamReader(stream, encoding);
 		}
 
-		Char lastChar = '\0';
-		Char GetChar()
+		protected Char lastChar = '\0';
+		protected virtual Char GetChar()
 		{
 			if(lastChar != '\0')
 			{
@@ -82,7 +81,7 @@ namespace MathLanguage
 			return buf[0];
 		}
 
-		void SkipLine()
+		protected void SkipLine()
 		{
 			while (reader.Read(buf, 0, 1) == 1 && buf[0] != '\n');
 			line++;
@@ -98,7 +97,7 @@ namespace MathLanguage
 			Number,
 		}
 
-		public bool GetEscapeChar(ref char c)
+		protected virtual bool GetEscapeChar(ref char c)
 		{
 			switch(c)
 			{
@@ -113,7 +112,7 @@ namespace MathLanguage
 			return true;
 		}
 
-		public TokenData Next()
+		public virtual TokenData Next()
 		{
 			sb.Remove(0, sb.Length);
 			char c;
@@ -250,6 +249,7 @@ namespace MathLanguage
 			}
 			TokenData ret;
 			var str = sb.ToString();
+			// An identifier-type token could be a keyword, so let's check for those
 			if(token == Token.Identifier)
 			{
 				foundTokens.TryGetValue(sb.ToString(), out token);

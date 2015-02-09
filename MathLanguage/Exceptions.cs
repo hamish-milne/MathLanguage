@@ -11,6 +11,14 @@ namespace MathLanguage
 		}
 	}
 
+	public class LexerException : RuntimeException
+	{
+		public LexerException(string message)
+			: base(message)
+		{
+		}
+	}
+
 	public class InvalidOperatorException : RuntimeException
 	{
 		public InvalidOperatorException(Operator op, string a, string b)

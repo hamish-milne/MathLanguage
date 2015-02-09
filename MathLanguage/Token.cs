@@ -15,6 +15,14 @@ namespace MathLanguage
 		Let,
 		Mut,
 		Const,
+		// Control
+		If,
+		Else,
+		For,
+		While,
+		Switch,
+		Break,
+		Return,
 		// Binary operators
 		In,
 		Union,
