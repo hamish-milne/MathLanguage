@@ -16,14 +16,19 @@ namespace MathLanguage
 				get { return "none"; }
 			}
 
-			static NoneValue()
+			public override Value DoOperation(Operator op, Value right, bool assign)
 			{
-				Operation<NoneValue, NoneValue> t = (a, b, assign) => BoolValue.Get(true);
-				Operation<NoneValue, NoneValue> f = (a, b, assign) => BoolValue.Get(false);
-				OperatorManager.I.Register(Operator.Equal, t);
-				OperatorManager.I.Register(Operator.NotEqual, f);
-				OperatorManager.I.Register(Operator.In, t);
-				OperatorManager.I.Register(Operator.NotIn, f);
+				if (right is NoneValue)
+				switch (op)
+				{
+					case Operator.Equal:
+					case Operator.In:
+						return BoolValue.Get(true);
+					case Operator.NotEqual:
+					case Operator.NotIn:
+						return BoolValue.Get(false);
+				}
+				return null;
 			}
 		}
 
@@ -53,6 +58,21 @@ namespace MathLanguage
 				members = new Dictionary<string, Value>();
 			members[member] = value;
 			return this;
+		}
+
+		public virtual Value GetIndex(params Value[] indices)
+		{
+			throw new IndexException(TypeName, indices.Length);
+		}
+
+		public virtual Value SetIndex(Value newValue, params Value[] indices)
+		{
+			throw new IndexException(TypeName, indices.Length);
+		}
+
+		public virtual Value DoOperation(Operator op, Value right, bool assign)
+		{
+			return null;
 		}
 	}
 

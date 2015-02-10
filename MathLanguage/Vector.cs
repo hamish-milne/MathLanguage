@@ -4,75 +4,35 @@ using System.Text;
 
 namespace MathLanguage
 {
-	public abstract class Vector<T> : Value where T : Value
+	public class Vector : Value
 	{
-		protected T[] array;
-		
-		protected delegate Vector<T> Creator(int length);
-		protected static Creator creator;
+		NumberValue[] array;
 
-		public static Vector<T> Create(int length)
+		public override string TypeName
 		{
-			if (creator == null)
-				throw new InvalidOperationException("No creator set for vector of " + typeof(T));
-			return creator(length);
-		}
-
-		public int Length
-		{
-			get { return array.Length; }
+			get { return "vector"; }
 		}
 
 		protected Vector(int length)
 		{
-			array = ArrayPool<T>.Get(length);
+			if (length < 0)
+				throw new ArgumentOutOfRangeException();
+			array = new NumberValue[length];
+			for (int i = 0; i < array.Length; i++)
+				array[i] = RealValue.Zero;
 		}
 
-		protected abstract Value GetZero();
-
-		protected virtual int GetIndex(string member)
+		public override Value GetIndex(params Value[] indices)
 		{
-			if (member == null)
-				throw new ArgumentNullException();
-			switch (member)
-			{
-				case "x":
-					return 0;
-				case "y":
-					return 1;
-				case "z":
-					return 2;
-				case "w":
-					return 3;
-				default:
-					throw new MissingMemberException(member, TypeName);
-			}
-		}
-
-		public override Value this[string member]
-		{
-			get
-			{
-				int index = GetIndex(member);
-				if (index >= Length)
-					return GetZero();
-				return array[index];
-			}
-		}
-
-		public override Value SetMember(string member, Value value)
-		{
-			int index = GetIndex(member);
-			if(index >= Length)
-			{
-				var newVector = Create(index + 1);
-				for (int i = 0; i < Length; i++)
-					newVector.array[i] = array[i];
-				//newVector.array[index] = value;
-				return newVector;
-			}
-			//array[index] = value;
-			return null;
+			if (indices.Length != 1)
+				base.GetIndex(indices);
+			var num = indices[0] as NumberValue;
+			long discrete;
+			if (num == null || !num.IsDiscrete || (discrete = num.AsDiscrete) < 0)
+				throw new IndexTypeException(TypeName);
+			if (discrete >= array.Length)
+				return Value.None;
+			return array[discrete];
 		}
 	}
 }

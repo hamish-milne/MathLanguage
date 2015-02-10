@@ -27,6 +27,14 @@ namespace MathLanguage
 		}
 	}
 
+	public class NoUnaryOperator : RuntimeException
+	{
+		public NoUnaryOperator(Operator op, string type)
+			: base("The unary operator " + op + " cannot be applied to a " + type)
+		{
+		}
+	}
+
 	public class MissingMemberException : RuntimeException
 	{
 		public MissingMemberException(string member, string type)
@@ -48,6 +56,14 @@ namespace MathLanguage
 	{
 		public IndexException(string type, int paramCount)
 			: base("A " + type + " value does not have an index with " + paramCount + " parameters")
+		{
+		}
+	}
+
+	public class IndexTypeException : RuntimeException
+	{
+		public IndexTypeException(string type)
+			: base("Indices for " + type + " must be non-negative discrete numbers")
 		{
 		}
 	}
