@@ -45,7 +45,9 @@
     <Compile Include="DiscreteValue.cs" />
     <Compile Include="Enumerations.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="InitializeOnLoadAttribute.cs" />
     <Compile Include="ITypeMask.cs" />
+    <Compile Include="Members.cs" />
     <Compile Include="NumberValue.cs" />
     <Compile Include="OperatorManager.cs" />
     <Compile Include="Parser.cs" />
@@ -58,6 +60,7 @@
     <Compile Include="Util.cs" />
     <Compile Include="Value.cs" />
     <Compile Include="Variable.cs" />
+    <Compile Include="NumberVector.cs" />
     <Compile Include="Vector.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

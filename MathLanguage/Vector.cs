@@ -4,22 +4,45 @@ using System.Text;
 
 namespace MathLanguage
 {
-	public class Vector : Value
+	[InitializeOnLoad]
+	public abstract class Vector<T> : Value where T : Value
 	{
-		NumberValue[] array;
+		public delegate Vector<T> Creator(int length);
 
-		public override string TypeName
+		static Creator create;
+		public static Creator Create
 		{
-			get { return "vector"; }
+			get
+			{
+				if (create == null)
+					throw new NullReferenceException("Vector of " + typeof(T) + " has no Creator");
+				return create;
+			}
+			protected set { create = value; }
+		}
+		
+		protected readonly T[] array;
+
+		public virtual int Length
+		{
+			get { return array.Length; }
 		}
 
 		protected Vector(int length)
 		{
 			if (length < 0)
 				throw new ArgumentOutOfRangeException();
-			array = new NumberValue[length];
-			for (int i = 0; i < array.Length; i++)
-				array[i] = RealValue.Zero;
+			array = ArrayPool<T>.Get(length);
+		}
+
+		~Vector()
+		{
+			ArrayPool<T>.Release(array);
+		}
+
+		public override string TypeName
+		{
+			get { return "vector"; }
 		}
 
 		public override Value GetIndex(params Value[] indices)
@@ -33,6 +56,12 @@ namespace MathLanguage
 			if (discrete >= array.Length)
 				return Value.None;
 			return array[discrete];
+		}
+
+		public virtual T this[int index]
+		{
+			get { return array[index]; }
+			set { array[index] = value; }
 		}
 	}
 }

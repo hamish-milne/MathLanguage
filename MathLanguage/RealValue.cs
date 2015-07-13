@@ -102,7 +102,7 @@ namespace MathLanguage
 					case "z":
 					case "w":
 					case "Im":
-						return Get(0);
+						return Zero;
 				}
 				throw new MissingMemberException(member, TypeName);
 			}
@@ -136,8 +136,9 @@ namespace MathLanguage
 			}
 			if (value == null)
 				value = None;
-			if (!(value is RealValue) && !(value is ComplexValue && newComponent > 1))
-				throw new MemberTypeException(member, TypeName, value.TypeName, TypeName);
+			var num = value as NumberValue;
+			if (num == null || (!num.IsReal && newComponent <= 1))
+				throw new MemberTypeException(member, TypeName, value.TypeName, "number");
 
 			var nv = value as RealValue;
 			switch (newComponent)
@@ -151,7 +152,10 @@ namespace MathLanguage
 				case 2:
 				case 3:
 				case 4:
-					throw new Exception("Vectors not supported yet :(");
+					var vector = Vector<NumberValue>.Create(newComponent);
+					vector[0] = this;
+					vector[newComponent] = num;
+					return vector;
 			}
 			return this;
 		}
